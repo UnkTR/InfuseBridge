@@ -1,0 +1,38 @@
+name: Build InfuseBridge Dylib
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile arm64 iOS dylib
+        run: |
+          xcrun --sdk iphoneos clang \
+            -arch arm64 \
+            -miphoneos-version-min=15.0 \
+            -fobjc-arc \
+            -dynamiclib \
+            -install_name @rpath/InfuseBridge.dylib \
+            -framework Foundation \
+            -framework UIKit \
+            InfuseBridge.m \
+            -o InfuseBridge.dylib
+
+      - name: Verify architecture
+        run: |
+          lipo -info InfuseBridge.dylib
+          otool -L InfuseBridge.dylib
+
+      - name: Upload dylib artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: InfuseBridge-dylib
+          path: InfuseBridge.dylib
